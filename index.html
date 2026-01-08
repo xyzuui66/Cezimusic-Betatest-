@@ -2,113 +2,303 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cezimusic-Betatest AI & MUSIC</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Project Vnioapp v11.5 - Secure Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
-        :root { --spotify-green: #1DB954; --bg-main: #000; --bg-card: #121212; --ai-color: #5b5bfa; }
-        
-        /* Dasar */
-        * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        body { background: var(--bg-main); color: white; margin: 0; padding: 0; height: 100vh; overflow: hidden; position: relative; }
-
-        /* Background Animasi - Dibuat paling belakang */
-        canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 0.6; }
-
-        /* Notifikasi */
-        #topNotif { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--spotify-green); color: black; padding: 10px 20px; border-radius: 50px; font-weight: 700; font-size: 12px; z-index: 9999; transition: 0.5s; pointer-events: none; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-
-        /* Header & Konten - Harus di atas z-index 100 */
-        .container { position: relative; z-index: 100; height: 100vh; display: flex; flex-direction: column; }
-        
-        header { padding: 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
-        .logo { font-weight: 800; font-size: 22px; color: var(--spotify-green); }
-
-        .content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
-        .search-bar { width: 100%; background: #222; border: 1px solid #444; padding: 15px 20px; border-radius: 50px; color: white; margin-bottom: 20px; outline: none; }
-
-        /* Sidebar & Modals - Harus paling depan */
-        .sidebar { position: fixed; top: 0; left: -100%; width: 80%; max-width: 300px; height: 100%; background: #080808; z-index: 10000; transition: 0.4s; padding: 40px 20px; border-right: 1px solid #333; }
-        .sidebar.active { left: 0; }
-
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 11000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-card { background: #181818; width: 100%; max-width: 350px; padding: 25px; border-radius: 20px; text-align: center; border: 1px solid #333; }
-
-        /* UI Card */
-        .song-item { display: flex; align-items: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 10px; cursor: pointer; }
-        .song-item img { width: 45px; border-radius: 8px; margin-right: 15px; }
-
-        /* Player */
-        .player { position: fixed; bottom: 0; width: 100%; background: rgba(10,10,10,0.95); border-top: 1px solid #222; padding: 15px 20px 25px; z-index: 9000; }
-        .btn-play { font-size: 28px; color: var(--spotify-green); cursor: pointer; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; margin: 0; }
+        .ios-blur { background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .glass-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; }
+        .page { display: none; height: 100%; overflow-y: auto; padding-bottom: 240px; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .input-vnio { background: #121212; border: 1px solid #333; border-radius: 16px; padding: 12px 18px; width: 100%; color: white; font-size: 13px; margin-bottom: 10px; outline: none; transition: 0.3s; }
+        .input-vnio:focus { border-color: #3b82f6; }
+        #maintenance-screen, #banned-screen { display: none; position: fixed; inset: 0; z-index: 10000; background: #000; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .maintenance-active #maintenance-screen, .is-banned #banned-screen { display: flex; }
+        .msg-dev { background: linear-gradient(to right, #1e3a8a, #3b82f6) !important; border: 1px solid #60a5fa !important; }
+        .msg-ai { background: linear-gradient(135deg, #4f46e5, #9333ea) !important; border: none !important; }
+        .dot { width: 4px; height: 4px; background: #fff; border-radius: 50%; animation: wave 1.3s infinite; }
+        @keyframes wave { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="topNotif">Support terus broww biar update terus! 🌸</div>
-    <canvas id="canvasAnim"></canvas>
-
-    <div id="sidebar" class="sidebar">
-        <div style="text-align: right; margin-bottom: 20px;">
-            <i class="fas fa-times" onclick="toggleSidebar()" style="font-size: 24px;"></i>
-        </div>
-        <div style="text-align: center; margin-bottom: 30px;">
-            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:70px; border-radius:50%; border:2px solid var(--spotify-green);">
-            <h3 id="sideUser">Cezimusic User</h3>
-        </div>
-        <div class="song-item" onclick="openAI()"><i class="fas fa-robot"></i>&nbsp;&nbsp;Cezi AI Support</div>
-        <div class="song-item" onclick="alert('Fitur segera hadir!')"><i class="fas fa-crown" style="color:gold"></i>&nbsp;&nbsp;Premium</div>
+    <div id="banned-screen" class="p-10">
+        <i class="fas fa-user-slash text-6xl text-red-600 mb-6"></i>
+        <h1 class="text-3xl font-black italic text-red-600 uppercase">Akses Diblokir</h1>
+        <p class="text-zinc-500 text-xs mt-4 font-bold tracking-widest">Akun Anda telah di-banned oleh Developer.</p>
     </div>
 
-    <div class="container">
-        <header>
-            <div class="logo">Cezimusic</div>
-            <i class="fas fa-bars" onclick="toggleSidebar()" style="font-size: 24px; cursor: pointer; padding: 5px;"></i>
+    <div id="maintenance-screen" class="p-10">
+        <i class="fas fa-tools text-5xl text-yellow-500 mb-6 animate-bounce"></i>
+        <h1 class="text-3xl font-black italic uppercase">Maintenance</h1>
+        <p class="text-zinc-500 text-xs mt-4 font-bold tracking-widest">Server sedang dioptimalkan.</p>
+    </div>
+
+    <div id="auth-modal" class="fixed inset-0 z-[100] bg-black flex items-center justify-center p-8 hidden overflow-y-auto">
+        <div class="w-full max-w-sm text-center py-10">
+            <h1 class="text-4xl font-black italic tracking-tighter mb-2">VNIO<span class="text-blue-500">APP</span></h1>
+            <p class="text-zinc-500 text-[10px] mb-8 uppercase font-bold tracking-tighter">Project Vnioapp Registration</p>
+            
+            <div id="auth-step-1">
+                <input id="login-name" type="text" placeholder="Username" class="input-vnio">
+                <div class="flex gap-2">
+                    <input id="login-phone" type="tel" placeholder="628xxx (WhatsApp)" class="input-vnio flex-1">
+                    <button onclick="sendOTP()" class="bg-green-600 h-[46px] px-4 rounded-2xl text-[10px] font-black uppercase mb-[10px]">Get OTP</button>
+                </div>
+            </div>
+
+            <div id="auth-step-2" class="hidden">
+                <input id="login-otp" type="number" placeholder="6-Digit Kode OTP" class="input-vnio text-center tracking-[10px] font-bold border-blue-500">
+                <input id="login-email" type="email" placeholder="Email (Opsional)" class="input-vnio">
+                <div class="relative">
+                    <input id="login-pass" type="text" placeholder="Sandi Akun" class="input-vnio">
+                    <button onclick="genPass()" class="absolute right-3 top-2.5 text-[9px] bg-blue-600 px-2 py-1 rounded text-white font-bold">ACAK</button>
+                </div>
+                <button onclick="handleAuth()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold mt-4 shadow-lg shadow-blue-600/20">Daftar & Masuk</button>
+            </div>
+            
+            <p id="auth-status" class="text-[9px] text-zinc-600 mt-6 uppercase font-bold"></p>
+        </div>
+    </div>
+
+    <div id="main-content" class="flex flex-col h-full hidden">
+        <header class="p-5 flex justify-between items-center ios-blur border-b border-white/5 shrink-0">
+            <h1 id="logo-vnio" class="text-xl font-extrabold italic tracking-tighter cursor-pointer">VNIO<span class="text-blue-500">APP</span></h1>
+            <img id="user-avatar" class="w-9 h-9 rounded-full border border-white/10 bg-zinc-800 object-cover">
         </header>
 
-        <main class="content">
-            <h2 style="margin-top:0">Halo, Selamat Datang 🌸</h2>
-            <input type="text" id="searchInput" class="search-bar" placeholder="Cari musik favoritmu..." oninput="debouncedSearch()">
-            <div id="results">
-                <p style="color:#666; font-size:12px;">Hasil pencarian akan muncul di sini...</p>
-            </div>
+        <main class="flex-1 overflow-hidden relative">
+            <section id="page-music" class="page active p-5">
+                <input id="music-search" type="text" placeholder="Cari lagu favorit..." class="input-vnio !rounded-full mb-6">
+                <div id="music-results" class="grid grid-cols-2 gap-4"></div>
+            </section>
+
+            <section id="page-chat" class="page p-5">
+                <div class="glass-card flex flex-col h-[520px]">
+                    <div id="global-messages" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+                    <div class="p-3 border-t border-white/5 flex gap-2">
+                        <input id="chat-input" type="text" placeholder="Ketik pesan..." class="input-vnio !rounded-full !mb-0">
+                        <button onclick="sendChat()" class="bg-blue-600 w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/20"><i class="fas fa-paper-plane text-xs text-white"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="page-ai" class="page p-5">
+                <div class="glass-card flex flex-col h-[520px]">
+                    <div id="ai-messages" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+                    <div id="ai-typing" class="px-4 py-2 hidden"><div class="flex gap-1 items-center bg-zinc-900/50 w-fit px-3 py-2 rounded-full"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                    <div class="p-3 border-t border-white/5 flex gap-2">
+                        <input id="ai-input" type="text" placeholder="Tanya Vnio-AI..." class="input-vnio !rounded-full !mb-0">
+                        <button onclick="askAI()" class="bg-indigo-600 w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-indigo-600/20"><i class="fas fa-robot text-xs text-white"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="page-social" class="page p-5">
+                <div id="friend-list" class="space-y-3"></div>
+            </section>
         </main>
+
+        <nav class="h-24 ios-blur border-t border-white/5 flex justify-around items-center px-4 shrink-0">
+            <div onclick="nav('music')" class="nav-btn text-blue-500 text-center cursor-pointer"><i class="fas fa-music text-xl"></i></div>
+            <div onclick="nav('chat')" class="nav-btn text-zinc-500 text-center cursor-pointer"><i class="fas fa-comment-dots text-xl"></i></div>
+            <div onclick="nav('ai')" class="nav-btn text-zinc-500 text-center cursor-pointer"><i class="fas fa-robot text-xl"></i></div>
+            <div onclick="nav('social')" class="nav-btn text-zinc-500 text-center cursor-pointer"><i class="fas fa-user-friends text-xl"></i></div>
+        </nav>
     </div>
 
-    <div id="aiModal" class="modal">
-        <div class="modal-card">
-            <h3 style="color:var(--ai-color)">Cezi AI Support</h3>
-            <p style="font-size:13px; color:#aaa;">Halo! Ada yang bisa saya bantu?</p>
-            <button onclick="closeModal('aiModal')" style="background:var(--ai-color); color:white; border:none; padding:10px 20px; border-radius:10px; width:100%; font-weight:700;">Tutup</button>
+    <div id="mini-player" class="fixed bottom-28 left-4 right-4 h-16 ios-blur border border-white/10 rounded-3xl p-2 flex items-center gap-3 hidden z-50 shadow-2xl">
+        <button onclick="closePlayer()" class="absolute -top-2 -right-2 w-6 h-6 bg-zinc-800 border border-white/10 rounded-full flex items-center justify-center text-[10px] text-zinc-400"><i class="fas fa-times"></i></button>
+        <img id="player-art" class="w-12 h-12 rounded-2xl object-cover">
+        <div class="flex-1 overflow-hidden">
+            <p id="player-title" class="text-xs font-bold truncate pr-4"></p>
+            <p class="text-[8px] text-zinc-500 uppercase font-black">Now Playing</p>
         </div>
+        <audio id="main-audio"></audio>
+        <button onclick="togglePlay()" class="w-10 h-10 bg-white text-black rounded-full"><i id="play-icon" class="fas fa-play"></i></button>
     </div>
-
-    <div class="player">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="max-width:70%;">
-                <h4 id="pTitle" style="margin:0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Pilih Lagu</h4>
-                <p id="pArtist" style="margin:0; font-size:11px; color:var(--spotify-green);">Cezimusic Beta</p>
-            </div>
-            <i id="pIcon" class="fas fa-play btn-play" onclick="togglePlay()"></i>
-        </div>
-    </div>
-
-    <audio id="bgMusic" loop src="https://www.chosic.com/wp-content/uploads/2021/07/The-Old-Tower-Inn.mp3"></audio>
-    <audio id="audio"></audio>
 
     <script>
-        const audio = document.getElementById('audio');
-        const bgMusic = document.getElementById('bgMusic');
-        const sidebar = document.getElementById('sidebar');
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBeGnAjNVmoB-uYGWadpFkEyxlPpuTmz2o",
+            authDomain: "ceziroom.firebaseapp.com",
+            databaseURL: "https://ceziroom-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ceziroom",
+            storageBucket: "ceziroom.firebasestorage.app",
+            messagingSenderId: "771662623358",
+            appId: "1:771662623358:web:de5b7635f3ff27f19fde2f"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        
+        const fonnteToken = "qzMuuPK4rLnVkjoG8sFH";
+        let generatedOTP = "";
+        let session = JSON.parse(localStorage.getItem('vnio_session'));
+        let clickCount = 0;
 
-        // Fungsi UI
-        function toggleSidebar() { sidebar.classList.toggle('active'); }
-        function openAI() { document.getElementById('aiModal').style.display='flex'; toggleSidebar(); }
-        function closeModal(id) { document.getElementById(id).style.display='none'; }
+        // --- AUTH & OTP LOGIC ---
+        function genPass() { document.getElementById('login-pass').value = Math.random().toString(36).slice(-6).toUpperCase(); }
 
-        // Fungsi Pencarian
-        async function searchSongs(q) {
+        async function sendOTP() {
+            const phone = document.getElementById('login-phone').value.trim();
+            const user = document.getElementById('login-name').value.trim();
+            const status = document.getElementById('auth-status');
+
+            if(!phone || !user) return alert("Isi Username dan Nomor WA!");
+            if(!phone.startsWith('62')) return alert("Gunakan format 628xxx!");
+
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            status.innerText = "Mengirim OTP...";
+
+            try {
+                const res = await fetch('https://api.fonnte.com/send', {
+                    method: 'POST',
+                    headers: { 'Authorization': fonnteToken },
+                    body: new URLSearchParams({
+                        'target': phone,
+                        'message': `[VNIOAPP] Halo ${user}! Kode rahasia pendaftaran kamu adalah: *${generatedOTP}*. Jangan berikan kode ini kepada siapapun.`
+                    })
+                });
+                const data = await res.json();
+                if(data.status) {
+                    status.innerText = "OTP Terkirim ke WhatsApp!";
+                    document.getElementById('auth-step-2').classList.remove('hidden');
+                } else {
+                    alert("Gagal kirim WA: " + data.reason);
+                }
+            } catch (err) { alert("Koneksi Error!"); }
+        }
+
+        async function handleAuth() {
+            const p = document.getElementById('login-phone').value.trim();
+            const e = document.getElementById('login-email').value.trim();
+            const u = document.getElementById('login-name').value.trim();
+            const s = document.getElementById('login-pass').value.trim();
+            const otpInput = document.getElementById('login-otp').value.trim();
+
+            if(otpInput !== generatedOTP) return alert("KODE OTP SALAH!");
+            if(!p || !u || !s) return alert("Lengkapi data!");
+
+            const ipRes = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipRes.json();
+            
+            const userData = { 
+                phone: p, 
+                email: e || 'no-email@vnio.app', 
+                username: u, 
+                password: s, 
+                ip: ipData.ip, 
+                status: 'active', 
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u}` 
+            };
+
+            db.ref('users/' + p).set(userData).then(() => {
+                localStorage.setItem('vnio_session', JSON.stringify(userData));
+                location.reload();
+            });
+        }
+
+        function initSecurity() {
+            if(!session) { 
+                document.getElementById('auth-modal').classList.remove('hidden'); 
+            } else {
+                document.getElementById('main-content').classList.remove('hidden');
+                document.getElementById('user-avatar').src = session.avatar;
+                
+                db.ref('users/' + session.phone).on('value', snap => {
+                    const val = snap.val();
+                    if(!val || val.status === 'banned') document.body.classList.add('is-banned');
+                });
+            }
+
+            db.ref('server_status').on('value', snap => {
+                if(snap.val() === 'maintenance') document.body.classList.add('maintenance-active');
+                else document.body.classList.remove('maintenance-active');
+            });
+        }
+
+        // --- CORE FUNCTIONS (CHAT, AI, MUSIC) ---
+        function sendChat() {
+            const inp = document.getElementById('chat-input');
+            if(!inp.value.trim()) return;
+            db.ref('global_chats').push({ user: session.username, msg: inp.value, role:'user' });
+            inp.value = "";
+        }
+
+        db.ref('global_chats').limitToLast(50).on('value', snap => {
+            const box = document.getElementById('global-messages');
+            const data = snap.val(); if(!data) return;
+            box.innerHTML = Object.values(data).map(c => `
+                <div class="flex ${c.user === session?.username ? 'justify-end' : 'justify-start'}">
+                    <div class="${c.role === 'developer' ? 'msg-dev' : (c.user === session?.username ? 'bg-blue-600' : 'bg-zinc-900 border border-white/10')} px-4 py-2 rounded-2xl max-w-[85%]">
+                        <p class="text-[7px] font-black uppercase mb-1 opacity-50">${c.user}</p>
+                        <p class="text-sm">${c.msg}</p>
+                    </div>
+                </div>`).join('');
+            box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+        });
+
+        async function askAI() {
+            const inp = document.getElementById('ai-input');
+            const q = inp.value.trim(); if(!q) return;
+            appendAiMsg(session.username, q, 'user');
+            inp.value = "";
+            document.getElementById('ai-typing').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('ai-typing').classList.add('hidden');
+                let res = `Halo **${session.username}**, saya Vnio-AI. Saat ini saya masih tahap pengembangan.`;
+                if(q.toLowerCase().includes("ip")) res = `IP kamu: **${session.ip}**.`;
+                appendAiMsg("VNIO-AI", res, 'ai');
+            }, 1200);
+        }
+
+        function appendAiMsg(u, m, t) {
+            const box = document.getElementById('ai-messages');
+            box.innerHTML += `<div class="flex ${t==='user'?'justify-end':'justify-start'}"><div class="${t==='ai'?'msg-ai':'bg-zinc-800'} px-4 py-2 rounded-2xl max-w-[85%]"><p class="text-[7px] font-black mb-1 opacity-50">${u}</p><p class="text-sm">${m}</p></div></div>`;
+            box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+        }
+
+        function playMusic(u, t, a) {
+            const aud = document.getElementById('main-audio');
+            document.getElementById('player-art').src = a;
+            document.getElementById('player-title').innerText = t;
+            aud.src = u; aud.play();
+            document.getElementById('mini-player').classList.remove('hidden');
+            document.getElementById('play-icon').className = "fas fa-pause";
+        }
+
+        async function searchMusic(q) {
+            const grid = document.getElementById('music-results');
+            grid.innerHTML = `<div class="col-span-2 text-center py-10 text-[10px]">SEARCHING...</div>`;
+            const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=20`);
+            const data = await res.json();
+            grid.innerHTML = data.results.map(t => `
+                <div onclick="playMusic('${t.previewUrl}', '${t.trackName.replace(/'/g,"")}', '${t.artworkUrl100}')" class="glass-card p-3 cursor-pointer">
+                    <img src="${t.artworkUrl100.replace('100x100','400x400')}" class="w-full aspect-square object-cover rounded-2xl mb-2">
+                    <h4 class="font-bold text-[10px] truncate">${t.trackName}</h4>
+                </div>`).join('');
+        }
+
+        function nav(p) {
+            document.querySelectorAll('.page').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(e => { e.classList.remove('text-blue-500'); e.classList.add('text-zinc-500'); });
+            document.getElementById('page-'+p).classList.add('active');
+            event.currentTarget.classList.replace('text-zinc-500', 'text-blue-500');
+        }
+
+        window.onload = initSecurity;
+        document.getElementById('music-search').onkeypress = (e) => { if(e.key==='Enter') searchMusic(e.target.value); };
+    </script>
+</body>
+</html>
             if(!q) return;
             try {
                 const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&limit=15&entity=song`);
